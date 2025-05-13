@@ -3,10 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <title>Aplikasi Parkir</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    table, th, td {
+      border: 1px solid #aaa;
+    }
+    th, td {
+      padding: 8px;
+      text-align: center;
+    }
+    input, select, button {
+      padding: 5px;
+      margin: 5px 0;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    #waktuCetak {
+      display: none;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    #strukPrint {
+      display: none;
+      background: white;
+      padding: 20px;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+    }
+    @media print {
+      #waktuCetak,
+      #strukPrint {
+        display: block !important;
+      }
+      body *:not(#strukPrint):not(#strukPrint *) {
+        visibility: hidden;
+      }
+      #strukPrint {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h2>Aplikasi Parkir Offline</h2>
+
   <div class="form-group">
     <label>Jenis Kendaraan:</label>
     <select id="jenis">
@@ -20,6 +72,8 @@
   </div>
   <button onclick="hitung()">Hitung & Simpan</button>
 
+  <div id="waktuCetak"></div>
+
   <table>
     <thead>
       <tr>
@@ -32,6 +86,10 @@
     </thead>
     <tbody id="dataParkir"></tbody>
   </table>
+
+  <div id="strukPrint">
+    <div id="strukContent"></div>
+  </div>
 
   <script>
     function loadData() {
@@ -48,6 +106,7 @@
             <td>
               <button onclick="edit(${index})">Edit</button>
               <button onclick="hapus(${index})">Hapus</button>
+              <button onclick="cetakStruk(${index})">Cetak Struk</button>
             </td>
           </tr>`;
       });
@@ -98,6 +157,31 @@
       data.splice(index, 1);
       localStorage.setItem('parkir', JSON.stringify(data));
       loadData();
+    }
+
+    function formatTanggal(date) {
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      return date.toLocaleDateString('id-ID', options) + ' ' + date.toLocaleTimeString('id-ID');
+    }
+
+    function cetakStruk(index) {
+      const data = JSON.parse(localStorage.getItem('parkir')) || [];
+      const item = data[index];
+      const now = new Date();
+      const tanggal = formatTanggal(now);
+
+      document.getElementById('strukContent').innerHTML = `
+        <h2>RSOP CIAMIS</h2><h3>Struk Parkir</h3>
+        <p>Tanggal: ${tanggal}</p>
+        <p>Jenis Kendaraan: ${item.jenis}</p>
+        <p>Jam Masuk: ${item.jamMasuk}</p>
+        <p>Jam Keluar: ${item.jamKeluar}</p>
+        <p>Biaya: Rp ${item.biaya}</p>
+        <hr>
+        <p>Terima kasih telah menggunakan layanan parkir kami!</p>
+      `;
+      document.getElementById('strukPrint').style.display = 'block';
+      window.print();
     }
 
     loadData();
