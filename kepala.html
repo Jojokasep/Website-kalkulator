@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -40,22 +41,27 @@
       margin-top: 20px;
       border: 1px solid #ccc;
     }
-    @media print {
-      #waktuCetak,
-      #strukPrint {
-        display: block !important;
-      }
-      body *:not(#strukPrint):not(#strukPrint *) {
-        visibility: hidden;
-      }
-      #strukPrint {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-      }
-    }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #strukPrint, #strukPrint * {
+    visibility: visible;
+  }
+  #strukPrint {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 58mm;
+    padding: 10px;
+    font-size: 12px;
+    background: white;
+  }
+}
+
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -107,6 +113,7 @@
               <button onclick="edit(${index})">Edit</button>
               <button onclick="hapus(${index})">Hapus</button>
               <button onclick="cetakStruk(${index})">Cetak Struk</button>
+              <button onclick="cetakPDF(${index})">PDF</button>
             </td>
           </tr>`;
       });
@@ -171,17 +178,45 @@
       const tanggal = formatTanggal(now);
 
       document.getElementById('strukContent').innerHTML = `
-        <h2>RSOP CIAMIS</h2><h3>Struk Parkir</h3>
+        <div style="text-align:center">
+          <h3 style="margin:0">RSOP CIAMIS</h3>
+          <p style="margin:4px 0;">Struk Parkir</p>
+        </div>
         <p>Tanggal: ${tanggal}</p>
-        <p>Jenis Kendaraan: ${item.jenis}</p>
-        <p>Jam Masuk: ${item.jamMasuk}</p>
-        <p>Jam Keluar: ${item.jamKeluar}</p>
+        <p>Jenis: ${item.jenis}</p>
+        <p>Masuk: ${item.jamMasuk}</p>
+        <p>Keluar: ${item.jamKeluar}</p>
         <p>Biaya: Rp ${item.biaya}</p>
         <hr>
-        <p>Terima kasih telah menggunakan layanan parkir kami!</p>
+        <p style="text-align:center">Terima kasih!</p>
       `;
       document.getElementById('strukPrint').style.display = 'block';
       window.print();
+    }
+
+    async function cetakPDF(index) {
+      const data = JSON.parse(localStorage.getItem('parkir')) || [];
+      const item = data[index];
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const now = new Date();
+      const tanggal = formatTanggal(now);
+
+      doc.setFontSize(16);
+      doc.text("RSOP CIAMIS", 20, 20);
+      doc.setFontSize(14);
+      doc.text("Struk Parkir", 20, 30);
+
+      doc.setFontSize(12);
+      doc.text(`Tanggal: ${tanggal}`, 20, 40);
+      doc.text(`Jenis Kendaraan: ${item.jenis}`, 20, 50);
+      doc.text(`Jam Masuk: ${item.jamMasuk}`, 20, 60);
+      doc.text(`Jam Keluar: ${item.jamKeluar}`, 20, 70);
+      doc.text(`Biaya: Rp ${item.biaya}`, 20, 80);
+      doc.text("Terima kasih telah menggunakan layanan parkir kami!", 20, 100);
+
+      doc.save(`Struk_Parkir_${item.jenis}_${item.jamMasuk.replace(':', '-')}.pdf`);
     }
 
     loadData();
