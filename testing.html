@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Top Up Game | Codashop Clone</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 500px;
+      background: #fff;
+      margin: 2rem auto;
+      padding: 2rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    label {
+      margin-top: 1rem;
+      display: block;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .nominal, .payment {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+    .option {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      cursor: pointer;
+      flex: 1 1 45%;
+      text-align: center;
+      transition: 0.3s;
+      background: #f9f9f9;
+    }
+    .option.selected {
+      border-color: #007bff;
+      background: #e0f0ff;
+    }
+    button {
+      margin-top: 2rem;
+      width: 100%;
+      padding: 1rem;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1ebe5d;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Top Up Game Online</h2>
+
+    <label for="game">Pilih Game:</label>
+    <select id="game">
+      <option value="Free Fire">Free Fire</option>
+      <option value="Mobile Legends">Mobile Legends</option>
+      <option value="PUBG Mobile">PUBG Mobile</option>
+    </select>
+
+    <label for="playerId">Player ID:</label>
+    <input type="text" id="playerId" placeholder="Masukkan ID Anda" />
+
+    <label>Nominal Top-Up:</label>
+    <div class="nominal" id="nominalOptions">
+      <div class="option" data-value="5 Diamonds">5 Diamonds</div>
+      <div class="option" data-value="20 Diamonds">20 Diamonds</div>
+      <div class="option" data-value="50 Diamonds">50 Diamonds</div>
+      <div class="option" data-value="100 Diamonds">100 Diamonds</div>
+    </div>
+
+    <label>Metode Pembayaran:</label>
+    <div class="payment" id="paymentOptions">
+      <div class="option" data-value="Dana">Dana</div>
+      <div class="option" data-value="OVO">OVO</div>
+      <div class="option" data-value="Gopay">Gopay</div>
+      <div class="option" data-value="Pulsa">Pulsa</div>
+    </div>
+
+    <button onclick="submitTopUp()">Beli via WhatsApp</button>
+  </div>
+
+  <script>
+    let selectedNominal = "";
+    let selectedPayment = "";
+
+    document.querySelectorAll('#nominalOptions .option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('#nominalOptions .option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedNominal = opt.getAttribute('data-value');
+      });
+    });
+
+    document.querySelectorAll('#paymentOptions .option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('#paymentOptions .option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedPayment = opt.getAttribute('data-value');
+      });
+    });
+
+    function submitTopUp() {
+      const game = document.getElementById('game').value;
+      const playerId = document.getElementById('playerId').value;
+
+      if (!playerId || !selectedNominal || !selectedPayment) {
+        alert('Mohon lengkapi semua data!');
+        return;
+      }
+
+      const message = `Halo, saya ingin top up:\n\nGame: ${game}\nID: ${playerId}\nNominal: ${selectedNominal}\nPembayaran: ${selectedPayment}`;
+      const phoneNumber = "081313601538";
+      const waLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+      window.open(waLink, '_blank');
+    }
+  </script>
+</body>
+</html>
