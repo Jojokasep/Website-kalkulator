@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Voucher Kendaraan RSOP</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f3;
+      padding: 20px;
+    }
+    .form input, .form select, .form button {
+      margin: 5px;
+      padding: 10px;
+    }
+    .card {
+      width: 320px;
+      border: 1px dashed #333;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .qrcode {
+      margin: 10px auto;
+    }
+    .btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Voucher Member Rawat Inap Rsop Ciamis</h2>
+
+  <div class="form">
+    Jenis Kendaraan:
+    <select id="jenis">
+      <option value="Mobil">Mobil</option>
+      <option value="Motor">Motor</option>
+    </select><br>
+    Plat Nomor: <input type="text" id="plat" placeholder="Contoh: Z 1234 AB"><br>
+    Masa Berlaku (hari): <input type="number" id="masa" value="1"><br>
+    Status Pembayaran:
+    <select id="status">
+      <option value="Sudah Bayar">Sudah Bayar</option>
+      <option value="Belum Bayar">Belum Bayar</option>
+    </select><br>
+    <button class="btn" onclick="buatVoucher()">Buat Voucher</button>
+    <button class="btn" onclick="cetakPDF()">Cetak PDF</button>
+    <button class="btn" onclick="printVoucher()">Print Voucher</button>
+    <button class="btn" onclick="hapusVoucher()">Hapus Voucher</button>
+  </div>
+
+  <div id="voucherArea" class="card" style="display:none;">
+    <h3>Voucher Parkir / Akses RSOP</h3>
+    <p><strong>Jenis Kendaraan:</strong> <span id="vJenis"></span></p>
+    <p><strong>Plat Nomor:</strong> <span id="vPlat"></span></p>
+    <p><strong>Masa Berlaku:</strong> <span id="vMasa"></span> Hari</p>
+    <p><strong>Status:</strong> <span id="vStatus"></span></p>
+    <p><strong>Total Harga:</strong> Rp <span id="vHarga"></span></p>
+    <div id="qrcode" class="qrcode"></div>
+    <p style="font-size:12px;">Dicetak: <span id="tanggalCetak"></span></p>
+  </div>
+
+  <script>
+    function hitungHarga(jenis, hari) {
+      jenis = jenis.toLowerCase();
+      if (jenis.includes("mobil")) return 15000 * hari;
+      else if (jenis.includes("motor")) return 10000 * hari;
+      else return 0;
+    }
+
+    function buatVoucher() {
+      const jenis = document.getElementById("jenis").value;
+      const plat = document.getElementById("plat").value.toUpperCase().trim();
+      const masa = parseInt(document.getElementById("masa").value);
+      const status = document.getElementById("status").value;
+      const tanggal = new Date().toLocaleDateString('id-ID');
+
+      if (!jenis || !plat || isNaN(masa)) {
+        alert("Harap lengkapi semua data.");
+        return;
+      }
+
+      const harga = hitungHarga(jenis, masa);
+      const hargaStr = harga > 0 ? harga.toLocaleString('id-ID') : "N/A";
+      const urlQR = `https://rsop.ciamis/kendaraan?plat=${encodeURIComponent(plat)}`;
+
+      document.getElementById("vJenis").innerText = jenis;
+      document.getElementById("vPlat").innerText = plat;
+      document.getElementById("vMasa").innerText = masa;
+      document.getElementById("vHarga").innerText = hargaStr;
+      document.getElementById("vStatus").innerText = status;
+      document.getElementById("tanggalCetak").innerText = tanggal;
+      document.getElementById("voucherArea").style.display = "block";
+
+      document.getElementById("qrcode").innerHTML = "";
+      new QRCode(document.getElementById("qrcode"), {
+        text: urlQR,
+        width: 100,
+        height: 100
+      });
+
+      const data = { jenis, plat, masa, status, harga, tanggal };
+      localStorage.setItem("voucherKendaraan", JSON.stringify(data));
+    }
+
+    function cetakPDF() {
+      const voucher = document.getElementById("voucherArea");
+      const { jsPDF } = window.jspdf;
+      html2canvas(voucher).then(canvas => {
+        const pdf = new jsPDF();
+        const imgData = canvas.toDataURL("image/png");
+        pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
+        pdf.save("voucher_kendaraan_rsop.pdf");
+      });
+    }
+
+    function printVoucher() {
+      const voucher = document.getElementById("voucherArea");
+      const printWindow = window.open('', '', 'width=600,height=600');
+      printWindow.document.write('<html><head><title>Cetak Voucher</title>');
+      printWindow.document.write('<style>body{font-family:Arial;text-align:center;} .card{border:1px dashed #333;padding:20px;border-radius:12px;width:300px;margin:auto;}</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write(voucher.outerHTML);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 500);
+    }
+
+    function hapusVoucher() {
+      localStorage.removeItem("voucherKendaraan");
+      document.getElementById("voucherArea").style.display = "none";
+      alert("Voucher berhasil dihapus.");
+    }
+
+    window.onload = () => {
+      const data = JSON.parse(localStorage.getItem("voucherKendaraan"));
+      if (data) {
+        document.getElementById("jenis").value = data.jenis;
+        document.getElementById("plat").value = data.plat;
+        document.getElementById("masa").value = data.masa;
+        document.getElementById("status").value = data.status;
+        buatVoucher();
+      }
+    };
+  </script>
+
+</body>
+</html>
