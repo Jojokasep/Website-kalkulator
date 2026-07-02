@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f0f0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>OmsetTracker</title>
+  <link rel="manifest" id="manifestLink">
+  <link rel="apple-touch-icon" id="appleIcon">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --bg-elevated: #1a1a1a;
+      --card: #1a1a1a;
+      --card-hover: #222222;
+      --border: #2a2a2a;
+      --fg: #f0ece4;
+      --fg-muted: #7a7568;
+      --accent: #e8a838;
+      --accent-glow: rgba(232, 168, 56, 0.12);
+      --accent-dim: #c4882a;
+      --success: #4ade80;
+      --danger: #f87171;
+      --nav-h: 72px;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
+    h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
+
+    ::-webkit-scrollbar { width: 0; height: 0; }
+
+    /* App Shell */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Status Bar Spacer */
+    .status-bar-spacer {
+      height: env(safe-area-inset-top, 0px);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    /* Header */
+    .app-header {
+      padding: 12px 20px 10px;
+      flex-shrink: 0;
+      background: var(--bg);
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Page Container */
+    .page-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: calc(var(--nav-h) + var(--safe-b) + 16px);
+    }
+
+    .page { display: none; padding: 0 16px 16px; }
+    .page.active { display: block; animation: pageFadeIn 0.3s ease; }
+
+    @keyframes pageFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: calc(var(--nav-h) + var(--safe-b));
+      padding-bottom: var(--safe-b);
+      background: linear-gradient(to top, var(--bg) 70%, transparent);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 8px 16px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      border: none;
+      background: none;
+      color: var(--fg-muted);
+      font-size: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      position: relative;
+    }
+
+    .nav-item i { font-size: 20px; transition: all 0.25s ease; }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 0 0 3px 3px;
+    }
+
+    .nav-item-fab {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0f0f0f;
+      font-size: 22px;
+      margin-top: -28px;
+      box-shadow: 0 4px 20px rgba(232, 168, 56, 0.35);
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .nav-item-fab:active { transform: scale(0.92); }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    /* Stat Card */
+    .stat-card {
+      position: relative;
+      overflow: hidden;
+      padding: 14px 16px;
+    }
+
+    .stat-card .stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Input */
+    .input-field {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.25s ease;
+      width: 100%;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-field::placeholder { color: var(--fg-muted); }
+
+    /* Button */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #0f0f0f;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      border: none;
+      border-radius: 14px;
+      padding: 15px 24px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 15px;
+      width: 100%;
+    }
+
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-chip {
+      background: var(--bg);
+      color: var(--fg-muted);
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .btn-chip.active {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-chip:active { transform: scale(0.95); }
+
+    .btn-icon-sm {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--fg-muted);
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .btn-icon-sm:active { transform: scale(0.9); }
+
+    .btn-icon-sm.danger:hover, .btn-icon-sm.danger:active {
+      border-color: var(--danger);
+      color: var(--danger);
+      background: rgba(248,113,113,0.1);
+    }
+
+    /* Omset List Item */
+    .omset-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      transition: background 0.15s ease;
+    }
+
+    .omset-item:last-child { border-bottom: none; }
+    .omset-item:active { background: var(--card-hover); }
+
+    .omset-item .day-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      line-height: 1.1;
+    }
+
+    .omset-item .day-badge .day-num {
+      font-family: 'Space Grotesk';
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--fg);
+    }
+
+    .omset-item .day-badge .day-name {
+      font-size: 9px;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 12px) + 12px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      width: calc(100% - 32px);
+      max-width: 440px;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 500;
+      transform: translateY(-20px);
+      opacity: 0;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    .toast-success {
+      background: rgba(74,222,128,0.15);
+      border: 1px solid rgba(74,222,128,0.3);
+      color: var(--success);
+    }
+
+    .toast-error {
+      background: rgba(248,113,113,0.15);
+      border: 1px solid rgba(248,113,113,0.3);
+      color: var(--danger);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .modal-sheet {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px 24px 0 0;
+      padding: 24px 20px calc(24px + var(--safe-b));
+      max-width: 480px;
+      width: 100%;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+    }
+
+    .modal-overlay.active .modal-sheet { transform: translateY(0); }
+
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 20px;
+    }
+
+    /* Chart */
+    .chart-wrap { position: relative; height: 220px; padding: 12px 0; }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--fg-muted);
+    }
+
+    .empty-state i { font-size: 40px; margin-bottom: 12px; opacity: 0.25; display: block; }
+
+    /* Download Banner */
+    .download-banner {
+      background: linear-gradient(135deg, rgba(232,168,56,0.12), rgba(196,136,42,0.08));
+      border: 1px solid rgba(232,168,56,0.2);
+      border-radius: 16px;
+      padding: 18px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .download-banner:active { transform: scale(0.98); }
+
+    .download-banner .dl-icon {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #0f0f0f;
+      flex-shrink: 0;
+    }
+
+    /* Pulse */
+    .pulse-dot {
+      width: 7px; height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      display: inline-block;
+      position: relative;
+    }
+
+    .pulse-dot::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid var(--success);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0; transform: scale(0.8); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+    }
+
+    /* Glow */
+    .bg-glow {
+      position: fixed;
+      top: -150px; right: -150px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(232,168,56,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      animation: floatG 10s ease-in-out infinite;
+    }
+
+    @keyframes floatG {
+      0%, 100% { transform: translate(0,0); }
+      50% { transform: translate(-30px, 30px); }
+    }
+
+    /* Filter Range */
+    .range-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Settings Item */
+    .settings-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settings-item:last-child { border-bottom: none; }
+
+    /* Tanggal picker styling untuk dark mode */
+    input[type="date"], input[type="month"] {
+      color-scheme: dark;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Desktop: tampilkan sebagai phone frame */
+    @media (min-width: 481px) {
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #080808;
+      }
+
+      .app-shell {
+        height: 90vh;
+        max-height: 900px;
+        border: 1px solid #2a2a2a;
+        border-radius: 32px;
+        overflow: hidden;
+        box-shadow: 0 0 80px rgba(232,168,56,0.06), 0 0 0 1px rgba(255,255,255,0.03);
+      }
+
+      .status-bar-spacer { display: none; }
+
+      .bottom-nav {
+        border-radius: 0 0 32px 32px;
+      }
+
+      .modal-sheet {
+        border-radius: 24px 24px 0 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow"></div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Modal Hapus -->
+  <div id="deleteModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h3 class="text-lg font-bold mb-1">Hapus Data?</h3>
+      <p class="text-sm mb-6" style="color:var(--fg-muted)">Data omset <strong id="deleteDate" style="color:var(--fg)"></strong> akan dihapus permanen.</p>
+      <div class="flex gap-3">
+        <button class="btn-chip flex-1" style="padding:14px;text-align:center;font-size:14px;border-radius:14px;" onclick="closeDeleteModal()">Batal</button>
+        <button class="btn-primary flex-1" style="background:var(--danger);border-radius:14px;" onclick="confirmDelete()">Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Reset -->
+  <div id="resetModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h3 class="text-lg font-bold mb-1">Reset Semua Data?</h3>
+      <p class="text-sm mb-6" style="color:var(--fg-muted)">Seluruh data omset bulan ini akan dihapus dan tidak bisa dikembalikan.</p>
+      <div class="flex gap-3">
+        <button class="btn-chip flex-1" style="padding:14px;text-align:center;font-size:14px;border-radius:14px;" onclick="closeResetModal()">Batal</button>
+        <button class="btn-primary flex-1" style="background:var(--danger);border-radius:14px;" onclick="confirmReset()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP SHELL -->
+  <div class="app-shell">
+    <div class="status-bar-spacer"></div>
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div style="width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent-dim));border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-chart-line" style="color:#0f0f0f;font-size:15px;"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold leading-tight">OmsetTracker</h1>
+            <div class="flex items-center gap-1.5">
+              <span class="pulse-dot"></span>
+              <span style="color:var(--fg-muted);font-size:11px;" id="liveDate"></span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-icon-sm" onclick="navigateTo('setting')" aria-label="Pengaturan">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Pages -->
+    <div class="page-container">
+
+      <!-- ====== HOME ====== -->
+      <div id="page-home" class="page active">
+        <!-- Stat Grid -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="card stat-card">
+            <div class="flex items-center gap-2.5 mb-2">
+              <div class="stat-icon" style="background:var(--accent-glow);color:var(--accent);"><i class="fa-solid fa-sun"></i></div>
+              <span style="color:var(--fg-muted);font-size:11px;">Hari Ini</span>
+            </div>
+            <p class="text-lg font-bold" style="font-family:'Space Grotesk'" id="statToday">Rp 0</p>
+          </div>
+          <div class="card stat-card">
+            <div class="flex items-center gap-2.5 mb-2">
+              <div class="stat-icon" style="background:rgba(74,222,128,0.1);color:var(--success);"><i class="fa-solid fa-calendar-week"></i></div>
+              <span style="color:var(--fg-muted);font-size:11px;">Minggu Ini</span>
+            </div>
+            <p class="text-lg font-bold" style="font-family:'Space Grotesk'" id="statWeek">Rp 0</p>
+          </div>
+          <div class="card stat-card">
+            <div class="flex items-center gap-2.5 mb-2">
+              <div class="stat-icon" style="background:rgba(96,165,250,0.1);color:#60a5fa;"><i class="fa-solid fa-calendar"></i></div>
+              <span style="color:var(--fg-muted);font-size:11px;">Total Bulan</span>
+            </div>
+            <p class="text-lg font-bold" style="font-family:'Space Grotesk'" id="statMonth">Rp 0</p>
+          </div>
+          <div class="card stat-card">
+            <div class="flex items-center gap-2.5 mb-2">
+              <div class="stat-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24;"><i class="fa-solid fa-arrow-trend-up"></i></div>
+              <span style="color:var(--fg-muted);font-size:11px;">Rata-rata</span>
+            </div>
+            <p class="text-lg font-bold" style="font-family:'Space Grotesk'" id="statAvg">Rp 0</p>
+          </div>
+        </div>
+
+        <!-- Mini Chart Preview -->
+        <div class="card" style="padding:4px 4px 0;">
+          <div class="flex items-center justify-between px-4 pt-3 pb-1">
+            <span style="font-size:13px;font-weight:600;">Grafik Bulan Ini</span>
+            <button class="btn-chip" style="font-size:11px;padding:4px 10px;" onclick="navigateTo('chart')">Lengkap <i class="fa-solid fa-arrow-right ml-1" style="font-size:9px;"></i></button>
+          </div>
+          <div style="height:140px;padding:8px 0;">
+            <canvas id="miniChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Omset Terakhir -->
+        <div class="flex items-center justify-between mt-4 mb-2 px-1">
+          <span style="font-size:13px;font-weight:600;">Omset Terakhir</span>
+          <button class="btn-chip" style="font-size:11px;padding:4px 10px;" onclick="navigateTo('list')">Semua <i class="fa-solid fa-arrow-right ml-1" style="font-size:9px;"></i></button>
+        </div>
+        <div class="card" id="recentList">
+          <!-- Diisi JS -->
+        </div>
+      </div>
+
+      <!-- ====== TAMBAH ====== -->
+      <div id="page-add" class="page">
+        <div class="flex items-center gap-2 mb-5 mt-1">
+          <div style="width:32px;height:32px;background:var(--accent-glow);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-plus" style="color:var(--accent);font-size:13px;"></i>
+          </div>
+          <h2 class="text-lg font-bold">Tambah Omset</h2>
+        </div>
+
+        <form id="formInput" onsubmit="return handleSubmit(event)">
+          <div class="mb-4">
+            <label class="block text-xs mb-1.5 font-medium" style="color:var(--fg-muted);">Tanggal</label>
+            <input type="date" id="inputDate" class="input-field" required aria-label="Tanggal omset">
+          </div>
+          <div class="mb-4">
+            <label class="block text-xs mb-1.5 font-medium" style="color:var(--fg-muted);">Jumlah Omset (Rp)</label>
+            <input type="text" id="inputAmount" class="input-field" placeholder="contoh: 500000" required inputmode="numeric" aria-label="Jumlah omset">
+          </div>
+          <div class="mb-5">
+            <label class="block text-xs mb-1.5 font-medium" style="color:var(--fg-muted);">Keterangan (opsional)</label>
+            <input type="text" id="inputNote" class="input-field" placeholder="contoh: Jualan online" aria-label="Keterangan">
+          </div>
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-check mr-2"></i>Simpan Omset
+          </button>
+        </form>
+
+        <div class="card mt-5" style="padding:16px;">
+          <p style="font-size:12px;color:var(--fg-muted);text-align:center;">
+            <i class="fa-solid fa-circle-info mr-1"></i>
+            Jika tanggal sudah ada, data akan diperbarui dengan nilai baru.
+          </p>
+        </div>
+      </div>
+
+      <!-- ====== GRAFIK ====== -->
+      <div id="page-chart" class="page">
+        <div class="flex items-center gap-2 mb-4 mt-1">
+          <div style="width:32px;height:32px;background:rgba(96,165,250,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-chart-bar" style="color:#60a5fa;font-size:13px;"></i>
+          </div>
+          <h2 class="text-lg font-bold">Grafik Omset</h2>
+        </div>
+
+        <!-- Bulan Selector -->
+        <div class="flex items-center gap-2 mb-3">
+          <button class="btn-icon-sm" onclick="changeChartMonth(-1)" aria-label="Bulan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+          <input type="month" id="chartMonth" class="input-field" style="text-align:center;font-family:'Space Grotesk';font-weight:600;font-size:14px;padding:10px;" aria-label="Pilih bulan">
+          <button class="btn-icon-sm" onclick="changeChartMonth(1)" aria-label="Bulan berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+
+        <div class="card" style="padding:8px 8px 4px;">
+          <div class="chart-wrap">
+            <canvas id="fullChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Ringkasan Bulan di Chart -->
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div class="card" style="padding:14px 16px;">
+            <span style="color:var(--fg-muted);font-size:11px;">Total Bulan Ini</span>
+            <p class="font-bold mt-1" style="font-family:'Space Grotesk';color:var(--accent);" id="chartTotal">Rp 0</p>
+          </div>
+          <div class="card" style="padding:14px 16px;">
+            <span style="color:var(--fg-muted);font-size:11px;">Hari Terisi</span>
+            <p class="font-bold mt-1" style="font-family:'Space Grotesk';" id="chartDays">0 / 0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== DAFTAR ====== -->
+      <div id="page-list" class="page">
+        <div class="flex items-center gap-2 mb-4 mt-1">
+          <div style="width:32px;height:32px;background:rgba(251,191,36,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-list" style="color:#fbbf24;font-size:13px;"></i>
+          </div>
+          <h2 class="text-lg font-bold">Daftar Omset</h2>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="flex gap-2 mb-3 overflow-x-auto pb-1" style="-webkit-overflow-scrolling:touch;">
+          <button class="btn-chip active" data-filter="all" onclick="setFilter('all',this)">Semua</button>
+          <button class="btn-chip" data-filter="today" onclick="setFilter('today',this)">Hari Ini</button>
+          <button class="btn-chip" data-filter="week" onclick="setFilter('week',this)">Minggu Ini</button>
+          <button class="btn-chip" data-filter="range" onclick="setFilter('range',this)">Rentang</button>
+        </div>
+
+        <!-- Range Filter -->
+        <div id="rangeFilter" class="hidden mb-3">
+          <div class="range-row mb-2">
+            <div>
+              <label class="block text-xs mb-1" style="color:var(--fg-muted);">Dari</label>
+              <input type="date" id="filterFrom" class="input-field" style="font-size:13px;padding:10px 12px;" aria-label="Dari tanggal">
+            </div>
+            <div>
+              <label class="block text-xs mb-1" style="color:var(--fg-muted);">Sampai</label>
+              <input type="date" id="filterTo" class="input-field" style="font-size:13px;padding:10px 12px;" aria-label="Sampai tanggal">
+            </div>
+          </div>
+          <button class="btn-chip w-full text-center" style="padding:10px;" onclick="applyRangeFilter()"><i class="fa-solid fa-search mr-1"></i>Terapkan</button>
+        </div>
+
+        <!-- Bulan Selector di List -->
+        <div class="flex items-center gap-2 mb-3">
+          <button class="btn-icon-sm" onclick="changeListMonth(-1)" aria-label="Bulan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+          <input type="month" id="listMonth" class="input-field" style="text-align:center;font-family:'Space Grotesk';font-weight:600;font-size:13px;padding:10px;" aria-label="Pilih bulan">
+          <button class="btn-icon-sm" onclick="changeListMonth(1)" aria-label="Bulan berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+
+        <!-- Filter Summary -->
+        <div class="flex items-center justify-between px-1 mb-2">
+          <span style="font-size:12px;color:var(--fg-muted);" id="filterInfo">Menampilkan semua</span>
+          <span style="font-size:13px;font-weight:700;color:var(--accent);font-family:'Space Grotesk';" id="filterTotal">Rp 0</span>
+        </div>
+
+        <div class="card" id="fullList">
+          <!-- Diisi JS -->
+        </div>
+      </div>
+
+      <!-- ====== PENGATURAN ====== -->
+      <div id="page-setting" class="page">
+        <div class="flex items-center gap-2 mb-4 mt-1">
+          <div style="width:32px;height:32px;background:rgba(168,85,247,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-gear" style="color:#a855f7;font-size:13px;"></i>
+          </div>
+          <h2 class="text-lg font-bold">Pengaturan</h2>
+        </div>
+
+        <!-- Download PWA Banner -->
+        <div class="download-banner" id="downloadBanner" onclick="installPWA()">
+          <div class="dl-icon">
+            <i class="fa-solid fa-download"></i>
+          </div>
+          <div class="flex-1">
+            <p class="font-bold text-sm" style="font-family:'Space Grotesk';">Unduh Aplikasi</p>
+            <p style="font-size:11px;color:var(--fg-muted);">Pasang OmsetTracker di perangkatmu untuk akses cepat</p>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color:var(--fg-muted);font-size:13px;"></i>
+        </div>
+
+        <!-- Info Aplikasi -->
+        <div class="card">
+          <div class="settings-item">
+            <div>
+              <p class="text-sm font-medium">Versi Aplikasi</p>
+              <p style="font-size:11px;color:var(--fg-muted);">v1.0.0 — PWA</p>
+            </div>
+            <span style="font-size:12px;color:var(--fg-muted);font-family:'Space Grotesk';">1.0.0</span>
+          </div>
+          <div class="settings-item">
+            <div>
+              <p class="text-sm font-medium">Penyimpanan</p>
+              <p style="font-size:11px;color:var(--fg-muted);">Data tersimpan di browser (localStorage)</p>
+            </div>
+            <i class="fa-solid fa-database" style="color:var(--fg-muted);"></i>
+          </div>
+          <div class="settings-item">
+            <div>
+              <p class="text-sm font-medium">Privasi</p>
+              <p style="font-size:11px;color:var(--fg-muted);">Tidak ada data yang dikirim ke server</p>
+            </div>
+            <i class="fa-solid fa-shield-halved" style="color:var(--success);"></i>
+          </div>
+        </div>
+
+        <!-- Data Management -->
+        <div class="card">
+          <div class="settings-item" style="cursor:pointer;" onclick="exportData()">
+            <div>
+              <p class="text-sm font-medium"><i class="fa-solid fa-file-export mr-2" style="color:var(--accent);"></i>Ekspor Data (CSV)</p>
+              <p style="font-size:11px;color:var(--fg-muted);">Unduh semua data sebagai file CSV</p>
+            </div>
+            <i class="fa-solid fa-arrow-up-right-from-square" style="color:var(--fg-muted);font-size:12px;"></i>
+          </div>
+          <div class="settings-item" style="cursor:pointer;" onclick="openResetModal()">
+            <div>
+              <p class="text-sm font-medium" style="color:var(--danger);"><i class="fa-solid fa-trash-can mr-2"></i>Reset Data Bulan Ini</p>
+              <p style="font-size:11px;color:var(--fg-muted);">Hapus semua data bulan yang aktif</p>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color:var(--fg-muted);font-size:12px;"></i>
+          </div>
+          <div class="settings-item" style="cursor:pointer;" onclick="clearAllData()">
+            <div>
+              <p class="text-sm font-medium" style="color:var(--danger);"><i class="fa-solid fa-bomb mr-2"></i>Hapus Semua Data</p>
+              <p style="font-size:11px;color:var(--fg-muted);">Hapus seluruh data di semua bulan</p>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color:var(--fg-muted);font-size:12px;"></i>
+          </div>
+        </div>
+
+        <!-- Panduan -->
+        <div class="card" style="padding:16px;">
+          <p class="text-sm font-semibold mb-2"><i class="fa-solid fa-lightbulb mr-2" style="color:var(--accent);"></i>Cara Pasang sebagai Aplikasi</p>
+          <div style="font-size:12px;color:var(--fg-muted);line-height:1.8;">
+            <p><strong style="color:var(--fg);">Android (Chrome):</strong> Ketuk menu titik tiga → "Pasang aplikasi" atau "Add to Home Screen"</p>
+            <p class="mt-2"><strong style="color:var(--fg);">iPhone (Safari):</strong> Ketuk tombol Share → "Add to Home Screen"</p>
+            <p class="mt-2"><strong style="color:var(--fg);">Desktop (Chrome/Edge):</strong> Klik ikon install di address bar</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-container -->
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav" aria-label="Navigasi utama">
+      <button class="nav-item active" data-page="home" onclick="navigateTo('home')" aria-label="Beranda">
+        <i class="fa-solid fa-house"></i>
+        <span>Beranda</span>
+      </button>
+      <button class="nav-item" data-page="chart" onclick="navigateTo('chart')" aria-label="Grafik">
+        <i class="fa-solid fa-chart-bar"></i>
+        <span>Grafik</span>
+      </button>
+      <button class="nav-item-fab" onclick="navigateTo('add')" aria-label="Tambah omset">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+      <button class="nav-item" data-page="list" onclick="navigateTo('list')" aria-label="Daftar">
+        <i class="fa-solid fa-list-ul"></i>
+        <span>Daftar</span>
+      </button>
+      <button class="nav-item" data-page="setting" onclick="navigateTo('setting')" aria-label="Pengaturan">
+        <i class="fa-solid fa-gear"></i>
+        <span>Setting</span>
+      </button>
+    </nav>
+
+  </div><!-- /app-shell -->
+
+  <script>
+    // ====== KONSTANTA ======
+    const STORAGE_KEY = 'omsettracker_data';
+    let currentFilter = 'all';
+    let deleteTargetKey = null;
+    let miniChartInstance = null;
+    let fullChartInstance = null;
+    let deferredPrompt = null;
+
+    // ====== PWA SETUP ======
+    // Buat icon untuk manifest secara dinamis
+    function generateIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Background rounded
+      const r = size * 0.2;
+      ctx.fillStyle = '#0f0f0f';
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(size - r, 0);
+      ctx.quadraticCurveTo(size, 0, size, r);
+      ctx.lineTo(size, size - r);
+      ctx.quadraticCurveTo(size, size, size - r, size);
+      ctx.lineTo(r, size);
+      ctx.quadraticCurveTo(0, size, 0, size - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.fill();
+
+      // Gradient accent
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0, '#e8a838');
+      grad.addColorStop(1, '#c4882a');
+
+      // Chart bars
+      const barW = size * 0.12;
+      const gap = size * 0.06;
+      const bars = [0.4, 0.7, 0.5, 0.9, 0.6];
+      const startX = size * 0.18;
+      const baseY = size * 0.72;
+
+      bars.forEach((h, i) => {
+        const x = startX + i * (barW + gap);
+        const barH = h * size * 0.4;
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        const br = barW * 0.25;
+        ctx.moveTo(x + br, baseY - barH);
+        ctx.lineTo(x + barW - br, baseY - barH);
+        ctx.quadraticCurveTo(x + barW, baseY - barH, x + barW, baseY - barH + br);
+        ctx.lineTo(x + barW, baseY);
+        ctx.lineTo(x, baseY);
+        ctx.lineTo(x, baseY - barH + br);
+        ctx.quadraticCurveTo(x, baseY - barH, x + br, baseY - barH);
+        ctx.fill();
+      });
+
+      // Trend line
+      ctx.strokeStyle = '#f0ece4';
+      ctx.lineWidth = size * 0.035;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      const points = [
+        [startX + barW * 0.5, baseY - 0.4 * size * 0.4 - size * 0.06],
+        [startX + (barW + gap) + barW * 0.5, baseY - 0.7 * size * 0.4 - size * 0.06],
+        [startX + 2 * (barW + gap) + barW * 0.5, baseY - 0.5 * size * 0.4 - size * 0.06],
+        [startX + 3 * (barW + gap) + barW * 0.5, baseY - 0.9 * size * 0.4 - size * 0.06],
+        [startX + 4 * (barW + gap) + barW * 0.5, baseY - 0.6 * size * 0.4 - size * 0.06],
+      ];
+      ctx.moveTo(points[0][0], points[0][1]);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0], points[i][1]);
+      }
+      ctx.stroke();
+
+      return canvas.toDataURL('image/png');
+    }
+
+    function setupPWA() {
+      const icon192 = generateIcon(192);
+      const icon512 = generateIcon(512);
+
+      // Set apple touch icon
+      document.getElementById('appleIcon').href = icon192;
+
+      // Buat manifest
+      const manifest = {
+        name: 'OmsetTracker — Catat Omset Bulanan',
+        short_name: 'OmsetTracker',
+        description: 'Aplikasi pencatatan omset harian dan bulanan',
+        start_url: '.',
+        display: 'standalone',
+        background_color: '#0f0f0f',
+        theme_color: '#0f0f0f',
+        orientation: 'portrait',
+        icons: [
+          { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ]
+      };
+
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      document.getElementById('manifestLink').href = URL.createObjectURL(blob);
+    }
+
+    // Tangkap event beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('downloadBanner').style.display = 'flex';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      document.getElementById('downloadBanner').style.display = 'none';
+      showToast('Aplikasi berhasil dipasang!');
+    });
+
+    // Cek apakah sudah terinstall
+    function checkInstalled() {
+      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+        document.getElementById('downloadBanner').style.display = 'none';
+      } else if (!deferredPrompt) {
+        // Tampilkan tetap sebagai panduan
+        document.getElementById('downloadBanner').style.display = 'flex';
+      }
+    }
+
+    async function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          showToast('Mengunduh aplikasi...');
+        }
+        deferredPrompt = null;
+      } else {
+        // Arahkan ke panduan
+        showToast('Gunakan menu browser untuk memasang aplikasi');
+      }
+    }
+
+    // ====== UTILITAS ======
+    function formatRupiah(num) {
+      if (num === 0) return 'Rp 0';
+      return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+      return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    function formatShort(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+      return `${d.getDate()} ${months[d.getMonth()]}`;
+    }
+
+    function getDayName(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][d.getDay()];
+    }
+
+    function getDayNum(dateStr) {
+      return new Date(dateStr + 'T00:00:00').getDate();
+    }
+
+    function todayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function currentMonthStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+
+    function isThisWeek(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      const now = new Date();
+      const dow = now.getDay();
+      const diffToMon = dow === 0 ? -6 : 1 - dow;
+      const mon = new Date(now);
+      mon.setHours(0, 0, 0, 0);
+      mon.setDate(now.getDate() + diffToMon);
+      const sun = new Date(mon);
+      sun.setDate(mon.getDate() + 6);
+      sun.setHours(23, 59, 59, 999);
+      return d >= mon && d <= sun;
+    }
+
+    function escapeHtml(t) {
+      const d = document.createElement('div');
+      d.textContent = t;
+      return d.innerHTML;
+    }
+
+    // ====== LOCAL STORAGE ======
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch { return {}; }
+    }
+
+    function saveData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    // ====== TOAST ======
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      requestAnimationFrame(() => { toast.classList.add('show'); });
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 2500);
+    }
+
+    // ====== NAVIGASI ======
+    function navigateTo(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const navBtn = document.querySelector(`.nav-item[data-page="${page}"]`);
+      if (navBtn) navBtn.classList.add('active');
+
+      // Scroll ke atas
+      document.querySelector('.page-container').scrollTop = 0;
+
+      // Refresh halaman tertentu
+      if (page === 'home') refreshHome();
+      if (page === 'chart') refreshFullChart();
+      if (page === 'list') refreshListPage();
+    }
+
+    // ====== MODAL ======
+    function openDeleteModal(key, dateStr) {
+      deleteTargetKey = key;
+      document.getElementById('deleteDate').textContent = formatDate(dateStr);
+      document.getElementById('deleteModal').classList.add('active');
+    }
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('active');
+      deleteTargetKey = null;
+    }
+    function confirmDelete() {
+      if (deleteTargetKey) {
+        const data = loadData();
+        delete data[deleteTargetKey];
+        saveData(data);
+        showToast('Data dihapus');
+        refreshAll();
+      }
+      closeDeleteModal();
+    }
+    function openResetModal() {
+      document.getElementById('resetModal').classList.add('active');
+    }
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.remove('active');
+    }
+    function confirmReset() {
+      const month = document.getElementById('listMonth').value;
+      const data = loadData();
+      const keys = Object.keys(data).filter(k => k.startsWith(month));
+      if (keys.length === 0) {
+        showToast('Tidak ada data', 'error');
+        closeResetModal();
+        return;
+      }
+      keys.forEach(k => delete data[k]);
+      saveData(data);
+      showToast(keys.length + ' data direset');
+      refreshAll();
+      closeResetModal();
+    }
+
+    // ====== FORM ======
+    function handleSubmit(e) {
+      e.preventDefault();
+      const dateVal = document.getElementById('inputDate').value;
+      const amountRaw = document.getElementById('inputAmount').value.replace(/[^0-9]/g, '');
+      const noteVal = document.getElementById('inputNote').value.trim();
+
+      if (!dateVal) { showToast('Pilih tanggal', 'error'); return false; }
+
+      const amount = parseInt(amountRaw, 10);
+      if (isNaN(amount) || amount <= 0) { showToast('Jumlah tidak valid', 'error'); return false; }
+
+      const data = loadData();
+      if (data[dateVal]) {
+        data[dateVal].amount = amount;
+        data[dateVal].note = noteVal;
+        data[dateVal].updatedAt = new Date().toISOString();
+        showToast('Data diperbarui');
+      } else {
+        data[dateVal] = { amount, note: noteVal, createdAt: new Date().toISOString() };
+        showToast(formatRupiah(amount) + ' tersimpan');
+      }
+
+      saveData(data);
+      document.getElementById('inputAmount').value = '';
+      document.getElementById('inputNote').value = '';
+      refreshAll();
+      return false;
+    }
+
+    // Format input ribuan
+    document.getElementById('inputAmount').addEventListener('input', function() {
+      let v = this.value.replace(/[^0-9]/g, '');
+      this.value = v ? parseInt(v, 10).toLocaleString('id-ID') : '';
+    });
+
+    // ====== FILTER ======
+    function setFilter(type, el) {
+      currentFilter = type;
+      document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+      document.getElementById('rangeFilter').classList.toggle('hidden', type !== 'range');
+      refreshListPage();
+    }
+
+    function applyRangeFilter() {
+      const from = document.getElementById('filterFrom').value;
+      const to = document.getElementById('filterTo').value;
+      if (!from || !to) { showToast('Pilih tanggal dari & sampai', 'error'); return; }
+      if (from > to) { showToast('Tanggal dari > sampai', 'error'); return; }
+      refreshListPage();
+    }
+
+    function getFilteredData(monthVal) {
+      const data = loadData();
+      const today = todayStr();
+      let filtered = {};
+      Object.keys(data).filter(k => k.startsWith(monthVal)).sort().forEach(k => filtered[k] = data[k]);
+
+      if (currentFilter === 'today') {
+        filtered = Object.keys(filtered).filter(k => k === today).reduce((a, k) => { a[k] = filtered[k]; return a; }, {});
+      } else if (currentFilter === 'week') {
+        filtered = Object.keys(filtered).filter(k => isThisWeek(k)).reduce((a, k) => { a[k] = filtered[k]; return a; }, {});
+      } else if (currentFilter === 'range') {
+        const from = document.getElementById('filterFrom').value;
+        const to = document.getElementById('filterTo').value;
+        if (from && to) filtered = Object.keys(filtered).filter(k => k >= from && k <= to).reduce((a, k) => { a[k] = filtered[k]; return a; }, {});
+      }
+      return filtered;
+    }
+
+    function getMonthData(monthVal) {
+      const data = loadData();
+      let filtered = {};
+      Object.keys(data).filter(k => k.startsWith(monthVal)).sort().forEach(k => filtered[k] = data[k]);
+      return filtered;
+    }
+
+    // ====== HOME ======
+    function refreshHome() {
+      const data = loadData();
+      const month = currentMonthStr();
+      const today = todayStr();
+
+      // Stats
+      const todayAmt = data[today] ? data[today].amount : 0;
+      document.getElementById('statToday').textContent = formatRupiah(todayAmt);
+
+      let weekTotal = 0;
+      Object.keys(data).filter(k => k.startsWith(month) && isThisWeek(k)).forEach(k => weekTotal += data[k].amount);
+      document.getElementById('statWeek').textContent = formatRupiah(weekTotal);
+
+      let monthTotal = 0, monthDays = 0;
+      Object.keys(data).filter(k => k.startsWith(month)).forEach(k => { monthTotal += data[k].amount; monthDays++; });
+      document.getElementById('statMonth').textContent = formatRupiah(monthTotal);
+
+      document.getElementById('statAvg').textContent = formatRupiah(monthDays > 0 ? monthTotal / monthDays : 0);
+
+      // Mini Chart
+      refreshMiniChart(month);
+
+      // Recent (5 terakhir)
+      const allKeys = Object.keys(data).filter(k => k.startsWith(month)).sort().reverse().slice(0, 5);
+      const container = document.getElementById('recentList');
+
+      if (allKeys.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-inbox"></i><p style="font-size:13px;">Belum ada data bulan ini</p></div>`;
+        return;
+      }
+
+      container.innerHTML = allKeys.map(k => {
+        const item = data[k];
+        const note = item.note ? `<p style="font-size:10px;color:var(--fg-muted);margin-top:2px;">${escapeHtml(item.note)}</p>` : '';
+        return `
+          <div class="omset-item">
+            <div class="day-badge">
+              <span class="day-num">${getDayNum(k)}</span>
+              <span class="day-name">${getDayName(k)}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p style="font-size:13px;font-weight:500;">${formatDate(k)}</p>
+              ${note}
+            </div>
+            <span style="font-weight:700;font-family:'Space Grotesk';color:var(--accent);font-size:14px;flex-shrink:0;">${formatRupiah(item.amount)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ====== MINI CHART (HOME) ======
+    function refreshMiniChart(monthVal) {
+      const monthData = getMonthData(monthVal);
+      const [year, mon] = monthVal.split('-').map(Number);
+      const days = new Date(year, mon, 0).getDate();
+      const labels = [], values = [], bg = [], border = [];
+
+      for (let d = 1; d <= days; d++) {
+        const ds = monthVal + '-' + String(d).padStart(2, '0');
+        labels.push(d);
+        const a = monthData[ds] ? monthData[ds].amount : 0;
+        values.push(a);
+        if (a > 0) { bg.push('rgba(232,168,56,0.7)'); border.push('rgba(232,168,56,1)'); }
+        else { bg.push('rgba(42,42,42,0.3)'); border.push('rgba(42,42,42,0.5)'); }
+      }
+
+      const ctx = document.getElementById('miniChart').getContext('2d');
+
+      if (miniChartInstance) {
+        miniChartInstance.data.labels = labels;
+        miniChartInstance.data.datasets[0].data = values;
+        miniChartInstance.data.datasets[0].backgroundColor = bg;
+        miniChartInstance.data.datasets[0].borderColor = border;
+        miniChartInstance.update('none');
+        return;
+      }
+
+      miniChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ data: values, backgroundColor: bg, borderColor: border, borderWidth: 0, borderRadius: 3, borderSkipped: false }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: {
+            backgroundColor: '#1a1a1a', titleColor: '#f0ece4', bodyColor: '#e8a838',
+            borderColor: '#2a2a2a', borderWidth: 1, cornerRadius: 8, padding: 10,
+            bodyFont: { family: 'Space Grotesk', weight: '600', size: 13 },
+            callbacks: { title: (items) => 'Tanggal ' + items[0].label, label: (c) => formatRupiah(c.parsed.y) }
+          }},
+          scales: {
+            x: { display: false },
+            y: { display: false, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // ====== FULL CHART ======
+    function refreshFullChart() {
+      const monthVal = document.getElementById('chartMonth').value;
+      const monthData = getMonthData(monthVal);
+      const [year, mon] = monthVal.split('-').map(Number);
+      const days = new Date(year, mon, 0).getDate();
+      const labels = [], values = [], bg = [], border = [];
+
+      let total = 0, filledDays = 0;
+
+      for (let d = 1; d <= days; d++) {
+        const ds = monthVal + '-' + String(d).padStart(2, '0');
+        labels.push(formatShort(ds));
+        const a = monthData[ds] ? monthData[ds].amount : 0;
+        values.push(a);
+        if (a > 0) {
+          bg.push('rgba(232,168,56,0.65)');
+          border.push('rgba(232,168,56,1)');
+          total += a;
+          filledDays++;
+        } else {
+          bg.push('rgba(42,42,42,0.25)');
+          border.push('rgba(42,42,42,0.4)');
+        }
+      }
+
+      document.getElementById('chartTotal').textContent = formatRupiah(total);
+      document.getElementById('chartDays').textContent = filledDays + ' / ' + days;
+
+      const ctx = document.getElementById('fullChart').getContext('2d');
+
+      if (fullChartInstance) {
+        fullChartInstance.data.labels = labels;
+        fullChartInstance.data.datasets[0].data = values;
+        fullChartInstance.data.datasets[0].backgroundColor = bg;
+        fullChartInstance.data.datasets[0].borderColor = border;
+        fullChartInstance.update('none');
+        return;
+      }
+
+      fullChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ label: 'Omset', data: values, backgroundColor: bg, borderColor: border, borderWidth: 1, borderRadius: 4, borderSkipped: false }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: {
+            backgroundColor: '#1a1a1a', titleColor: '#f0ece4', bodyColor: '#e8a838',
+            borderColor: '#2a2a2a', borderWidth: 1, cornerRadius: 10, padding: 12,
+            bodyFont: { family: 'Space Grotesk', weight: '600', size: 14 },
+            callbacks: { label: (c) => formatRupiah(c.parsed.y) }
+          }},
+          scales: {
+            x: {
+              grid: { color: 'rgba(42,42,42,0.4)', drawBorder: false },
+              ticks: { color: '#7a7568', font: { family: 'DM Sans', size: 9 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 15 }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(42,42,42,0.4)', drawBorder: false },
+              ticks: { color: '#7a7568', font: { family: 'Space Grotesk', size: 10 }, callback: (v) => {
+                if (v >= 1000000) return (v/1000000).toFixed(1)+'jt';
+                if (v >= 1000) return (v/1000).toFixed(0)+'rb';
+                return v;
+              }}
+            }
+          }
+        }
+      });
+    }
+
+    function changeChartMonth(dir) {
+      const input = document.getElementById('chartMonth');
+      const [y, m] = input.value.split('-').map(Number);
+      const d = new Date(y, m - 1 + dir, 1);
+      input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      refreshFullChart();
+    }
+
+    // ====== LIST PAGE ======
+    function refreshListPage() {
+      const monthVal = document.getElementById('listMonth').value;
+      const filtered = getFilteredData(monthVal);
+      const keys = Object.keys(filtered).sort().reverse();
+
+      // Info
+      const filterLabels = { all: 'Menampilkan semua', today: 'Filter: hari ini', week: 'Filter: minggu ini', range: 'Filter: rentang tanggal' };
+      document.getElementById('filterInfo').textContent = filterLabels[currentFilter] || 'Menampilkan semua';
+
+      let total = 0;
+      keys.forEach(k => total += filtered[k].amount);
+      document.getElementById('filterTotal').textContent = formatRupiah(total);
+
+      const container = document.getElementById('fullList');
+
+      if (keys.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-inbox"></i><p style="font-size:13px;">Tidak ada data</p></div>`;
+        return;
+      }
+
+      container.innerHTML = keys.map(k => {
+        const item = filtered[k];
+        const note = item.note ? `<p style="font-size:10px;color:var(--fg-muted);margin-top:2px;">${escapeHtml(item.note)}</p>` : '';
+        return `
+          <div class="omset-item">
+            <div class="day-badge">
+              <span class="day-num">${getDayNum(k)}</span>
+              <span class="day-name">${getDayName(k)}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p style="font-size:13px;font-weight:500;">${formatDate(k)}</p>
+              ${note}
+            </div>
+            <span style="font-weight:700;font-family:'Space Grotesk';color:var(--accent);font-size:14px;flex-shrink:0;margin-right:8px;">${formatRupiah(item.amount)}</span>
+            <button class="btn-icon-sm danger" onclick="openDeleteModal('${k}','${k}')" aria-label="Hapus"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function changeListMonth(dir) {
+      const input = document.getElementById('listMonth');
+      const [y, m] = input.value.split('-').map(Number);
+      const d = new Date(y, m - 1 + dir, 1);
+      input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      refreshListPage();
+    }
+
+    // ====== EKSPOR CSV ======
+    function exportData() {
+      const data = loadData();
+      const keys = Object.keys(data).sort();
+      if (keys.length === 0) { showToast('Tidak ada data untuk diekspor', 'error'); return; }
+
+      let csv = 'Tanggal,Omset,Keterangan\n';
+      keys.forEach(k => {
+        const item = data[k];
+        csv += `${k},${item.amount},"${(item.note || '').replace(/"/g, '""')}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'omsettracker_' + todayStr() + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Data berhasil diekspor');
+    }
+
+    // ====== CLEAR ALL ======
+    function clearAllData() {
+      // Gunakan modal reset sebagai konfirmasi
+      const data = loadData();
+      if (Object.keys(data).length === 0) {
+        showToast('Tidak ada data', 'error');
+        return;
+      }
+      // Buat konfirmasi sederhana via modal reset
+      deleteTargetKey = '__ALL__';
+      document.getElementById('deleteDate').textContent = 'SELURUH DATA DI SEMUA BULAN';
+      document.getElementById('deleteModal').classList.add('active');
+
+      // Override confirmDelete sekali
+      const origConfirm = window.confirmDelete;
+      window.confirmDelete = function() {
+        localStorage.removeItem(STORAGE_KEY);
+        showToast('Semua data dihapus');
+        refreshAll();
+        closeDeleteModal();
+        window.confirmDelete = origConfirm;
+      };
+    }
+
+    // ====== REFRESH ALL ======
+    function refreshAll() {
+      refreshHome();
+      if (document.getElementById('page-chart').classList.contains('active')) refreshFullChart();
+      if (document.getElementById('page-list').classList.contains('active')) refreshListPage();
+    }
+
+    // ====== LIVE DATE ======
+    function updateLiveDate() {
+      const now = new Date();
+      const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+      document.getElementById('liveDate').textContent =
+        days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear() +
+        '  ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    }
+
+    // ====== INIT ======
+    function init() {
+      setupPWA();
+      document.getElementById('inputDate').value = todayStr();
+      document.getElementById('chartMonth').value = currentMonthStr();
+      document.getElementById('listMonth').value = currentMonthStr();
+
+      updateLiveDate();
+      setInterval(updateLiveDate, 30000);
+
+      document.getElementById('chartMonth').addEventListener('change', refreshFullChart);
+      document.getElementById('listMonth').addEventListener('change', refreshListPage);
+      document.getElementById('filterFrom').addEventListener('change', () => { if (currentFilter === 'range') applyRangeFilter(); });
+      document.getElementById('filterTo').addEventListener('change', () => { if (currentFilter === 'range') applyRangeFilter(); });
+
+      document.getElementById('deleteModal').addEventListener('click', function(e) { if (e.target === this) closeDeleteModal(); });
+      document.getElementById('resetModal').addEventListener('click', function(e) { if (e.target === this) closeResetModal(); });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { closeDeleteModal(); closeResetModal(); }
+      });
+
+      setTimeout(checkInstalled, 1000);
+      refreshHome();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
